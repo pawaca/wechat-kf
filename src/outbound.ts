@@ -30,8 +30,8 @@ import { readFile } from "node:fs/promises";
 import { extname } from "node:path";
 import { resolveAccount } from "./accounts.js";
 import { sendLinkMessage, sendTextMessage, uploadMedia } from "./api.js";
-import { chunkText } from "./chunk-utils.js";
 import { WECHAT_MSG_LIMIT_ERRCODE, WECHAT_TEXT_CHUNK_LIMIT } from "./constants.js";
+import { getRuntime } from "./runtime.js";
 import { detectMediaType, downloadMediaFromUrl, formatText, uploadAndSendMedia } from "./send-utils.js";
 import type { OpenClawConfig } from "./types.js";
 import { parseWechatLinkDirective } from "./wechat-kf-directives.js";
@@ -83,7 +83,8 @@ export type SendPayloadParams = {
 
 export const wechatKfOutbound = {
   deliveryMode: "direct" as const,
-  chunker: (text: string, limit: number): string[] => chunkText(text, limit),
+  chunker: (text: string, limit: number): string[] =>
+    getRuntime().channel.text.chunkTextWithMode(text, limit, "length"),
   chunkerMode: "text" as const,
   textChunkLimit: WECHAT_TEXT_CHUNK_LIMIT,
 

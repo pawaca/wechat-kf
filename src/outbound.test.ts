@@ -26,6 +26,30 @@ vi.mock("node:fs/promises", () => ({
   readFile: (...args: any[]) => mockReadFile(...args),
 }));
 
+vi.mock("./runtime.js", () => ({
+  getRuntime: () => ({
+    channel: {
+      text: {
+        chunkTextWithMode: (text: string, limit: number, _mode: string) => {
+          if (limit <= 0) return [];
+          if (text.length <= limit) return text.trim() ? [text] : [];
+          const chunks: string[] = [];
+          let remaining = text;
+          while (remaining.length > 0) {
+            if (remaining.length <= limit) {
+              if (remaining.trim()) chunks.push(remaining.trim());
+              break;
+            }
+            chunks.push(remaining.slice(0, limit));
+            remaining = remaining.slice(limit);
+          }
+          return chunks;
+        },
+      },
+    },
+  }),
+}));
+
 const mockDownloadMediaFromUrl = vi.fn();
 vi.mock("./send-utils.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./send-utils.js")>();

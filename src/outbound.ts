@@ -320,7 +320,7 @@ export const wechatKfOutbound: ChannelOutboundAdapter = {
     if (mediaUrl) {
       const core = getRuntime();
       const loaded = await core.media.loadWebMedia(mediaUrl, { optimizeImages: false });
-      const mediaType = mediaKindToWechatType(loaded.kind);
+      const mediaType = mediaKindToWechatType(loaded.kind ?? "file");
 
       try {
         const result = await uploadAndSendMedia(

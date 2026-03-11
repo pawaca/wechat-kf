@@ -160,19 +160,12 @@ describe("handleWechatKfWebhook", () => {
     resetMonitor();
   });
 
-  it("returns false when shared context is not set", async () => {
+  it("returns 503 when shared context is not set", async () => {
     const req = createMockReq({ url: WEBHOOK_PATH });
     const res = createMockRes();
-    const handled = await handleWechatKfWebhook(req, res);
-    expect(handled).toBe(false);
-  });
-
-  it("returns false when path does not match", async () => {
-    setSharedContext(makeSharedCtx());
-    const req = createMockReq({ url: "/other-path" });
-    const res = createMockRes();
-    const handled = await handleWechatKfWebhook(req, res);
-    expect(handled).toBe(false);
+    await handleWechatKfWebhook(req, res);
+    expect(res._statusCode).toBe(503);
+    expect(res._body).toBe("wechat-kf not ready");
   });
 
   // ── GET: URL verification ──
@@ -182,8 +175,7 @@ describe("handleWechatKfWebhook", () => {
     const req = createMockReq({ method: "GET", url: `${WEBHOOK_PATH}?msg_signature=abc` });
     const res = createMockRes();
 
-    const handled = await handleWechatKfWebhook(req, res);
-    expect(handled).toBe(true);
+    await handleWechatKfWebhook(req, res);
     expect(res._statusCode).toBe(400);
     expect(res._body).toBe("missing params");
   });
@@ -201,8 +193,7 @@ describe("handleWechatKfWebhook", () => {
     });
     const res = createMockRes();
 
-    const handled = await handleWechatKfWebhook(req, res);
-    expect(handled).toBe(true);
+    await handleWechatKfWebhook(req, res);
     expect(res._statusCode).toBe(403);
     expect(res._body).toBe("signature mismatch");
     expect(logWarn).toHaveBeenCalledWith(expect.stringContaining("signature verification failed (GET)"));
@@ -223,8 +214,7 @@ describe("handleWechatKfWebhook", () => {
     });
     const res = createMockRes();
 
-    const handled = await handleWechatKfWebhook(req, res);
-    expect(handled).toBe(true);
+    await handleWechatKfWebhook(req, res);
     expect(res._statusCode).toBe(200);
     expect(res._body).toBe(echoMessage);
   });
@@ -237,8 +227,7 @@ describe("handleWechatKfWebhook", () => {
     const req = createMockReq({ method: "POST", url: WEBHOOK_PATH, body });
     const res = createMockRes();
 
-    const handled = await handleWechatKfWebhook(req, res);
-    expect(handled).toBe(true);
+    await handleWechatKfWebhook(req, res);
     expect(res._statusCode).toBe(400);
     expect(res._body).toBe("bad request");
   });
@@ -259,8 +248,7 @@ describe("handleWechatKfWebhook", () => {
     });
     const res = createMockRes();
 
-    const handled = await handleWechatKfWebhook(req, res);
-    expect(handled).toBe(true);
+    await handleWechatKfWebhook(req, res);
     expect(res._statusCode).toBe(403);
     expect(res._body).toBe("signature mismatch");
     expect(logWarn).toHaveBeenCalledWith(expect.stringContaining("signature verification failed (POST)"));
@@ -283,8 +271,7 @@ describe("handleWechatKfWebhook", () => {
     });
     const res = createMockRes();
 
-    const handled = await handleWechatKfWebhook(req, res);
-    expect(handled).toBe(true);
+    await handleWechatKfWebhook(req, res);
     expect(res._statusCode).toBe(200);
     expect(res._body).toBe("success");
 
@@ -323,8 +310,7 @@ describe("handleWechatKfWebhook", () => {
     });
     const res = createMockRes();
 
-    const handled = await handleWechatKfWebhook(req, res);
-    expect(handled).toBe(true);
+    await handleWechatKfWebhook(req, res);
     expect(res._statusCode).toBe(200);
 
     await new Promise((r) => setTimeout(r, 50));
@@ -338,8 +324,7 @@ describe("handleWechatKfWebhook", () => {
     const req = createMockReq({ method: "PUT", url: WEBHOOK_PATH });
     const res = createMockRes();
 
-    const handled = await handleWechatKfWebhook(req, res);
-    expect(handled).toBe(true);
+    await handleWechatKfWebhook(req, res);
     expect(res._statusCode).toBe(405);
     expect(res._body).toBe("method not allowed");
   });
@@ -349,8 +334,7 @@ describe("handleWechatKfWebhook", () => {
     const req = createMockReq({ method: "DELETE", url: WEBHOOK_PATH });
     const res = createMockRes();
 
-    const handled = await handleWechatKfWebhook(req, res);
-    expect(handled).toBe(true);
+    await handleWechatKfWebhook(req, res);
     expect(res._statusCode).toBe(405);
   });
 
@@ -366,8 +350,7 @@ describe("handleWechatKfWebhook", () => {
     });
     const res = createMockRes();
 
-    const handled = await handleWechatKfWebhook(req, res);
-    expect(handled).toBe(true);
+    await handleWechatKfWebhook(req, res);
     expect(res._statusCode).toBe(413);
     expect(res._body).toBe("payload too large");
   });
@@ -390,8 +373,7 @@ describe("handleWechatKfWebhook", () => {
     });
     const res = createMockRes();
 
-    const handled = await handleWechatKfWebhook(req, res);
-    expect(handled).toBe(true);
+    await handleWechatKfWebhook(req, res);
     expect(res._statusCode).toBe(500);
     expect(res._body).toBe("internal error");
   });

@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-03-11
+
+### Changed
+
+- **OpenClaw SDK upgrade** — dev dependency bumped from `2026.2.21` to `^2026.3.2` (OpenClaw 2026.3.x)
+- **HTTP route registration** — migrated from deprecated `api.registerHttpHandler` to `api.registerHttpRoute` with explicit path routing (`auth: "plugin"`) and `normalizeWebhookPath`; webhook handler no longer performs path matching (framework handles routing)
+- **Webhook handler signature** — return type changed from `Promise<boolean>` to `Promise<void>`; uninitialized state now responds 503 instead of silently skipping
+
+### Fixed
+
+- **`loadWebMedia` kind** — handle `undefined` media kind from updated SDK (`loaded.kind ?? "file"`) in both `outbound.ts` and `reply-dispatcher.ts`
+- **`markRunComplete` missing** — added to `createReplyDispatcher` return value to satisfy updated `ReplyDispatcherWithTypingResult` type
+
 ## [0.3.1] - 2026-03-02
 
 ### Fixed

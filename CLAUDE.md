@@ -15,7 +15,7 @@ pnpm run build
 # Type check
 pnpm run typecheck
 
-# Run all tests (~670 tests across 17 test files)
+# Run all tests (~673 tests across 17 test files)
 pnpm test
 
 # Run tests in watch mode
@@ -49,11 +49,11 @@ The plugin follows a layered design:
 
 **Shared Utilities** (`constants.ts`, `fs-utils.ts`) — Shared constants including CHANNEL_ID, DEFAULT_WEBHOOK_PATH, timeouts, and error codes (`constants.ts`), atomic file writes via temp+rename (`fs-utils.ts`).
 
-**Plugin Interface** (`channel.ts`, `index.ts`) — Implements OpenClaw's `ChannelPlugin` interface including security adapter (`resolveDmPolicy`, `collectWarnings`); `index.ts` is the entry point that exports the plugin and key helpers.
+**Plugin Interface** (`channel.ts`, `index.ts`) — Implements OpenClaw's `ChannelPlugin` interface including security adapter (`resolveDmPolicy`, `collectWarnings`); `index.ts` is the entry point that exports the plugin and key helpers. Webhook registered via `api.registerHttpRoute` with path-based routing.
 
 ### Message Flow
 
-**Inbound:** WeCom callback -> `webhook.ts` (method/size/content-type validation, decrypt via `crypto.ts`) -> `bot.ts` (DM policy check, per-kfId mutex, msgid dedup, debounce coalescing, sync_msg with cursor, extract text from 14+ message types, handle events: enter_session/msg_send_fail/servicer_status_change, download media) -> dispatch to OpenClaw agent via `runtime.ts`.
+**Inbound:** WeCom callback -> framework routes by path -> `webhook.ts` (method/size/content-type validation, decrypt via `crypto.ts`) -> `bot.ts` (DM policy check, per-kfId mutex, msgid dedup, debounce coalescing, sync_msg with cursor, extract text from 14+ message types, handle events: enter_session/msg_send_fail/servicer_status_change, download media) -> dispatch to OpenClaw agent via `runtime.ts`.
 
 **Outbound (framework-driven):** Agent reply -> framework calls `outbound.ts` chunker (framework `chunkTextWithMode`) -> `sendText` per chunk (formatText via unicode-format) or `sendMedia` (loadWebMedia for all URL formats, upload to WeChat temp media, send) -> `api.ts` (send_msg) -> WeCom.
 

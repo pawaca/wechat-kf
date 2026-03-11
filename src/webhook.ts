@@ -6,7 +6,7 @@
  * - POST: Event notification (decrypt XML → trigger sync_msg)
  *
  * Designed to be registered on the framework's shared gateway server
- * via api.registerHttpHandler(handleWechatKfWebhook).
+ * via api.registerHttpRoute({ path, handler }).
  */
 
 import type { IncomingMessage, ServerResponse } from "node:http";
@@ -68,18 +68,18 @@ export function xmlTag(xml: string, tag: string): string | undefined {
 /**
  * Framework-compatible HTTP handler for WeChat KF webhooks.
  *
- * Returns `true` if the request was handled, `false` if the path doesn't
- * match (so the framework can try other plugins).
+ * The framework routes requests by path, so this handler only needs
+ * to process the request — no path matching required.
  */
-export async function handleWechatKfWebhook(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
+export async function handleWechatKfWebhook(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const ctx = getSharedContext();
-  if (!ctx) return false;
+  if (!ctx) {
+    res.writeHead(503);
+    res.end("wechat-kf not ready");
+    return;
+  }
 
   const url = req.url ?? "/";
-  const pathname = url.split("?")[0];
-
-  if (pathname !== ctx.webhookPath) return false;
-
   const query = parseQuery(url);
 
   try {
@@ -89,20 +89,20 @@ export async function handleWechatKfWebhook(req: IncomingMessage, res: ServerRes
       if (!msg_signature || !timestamp || !nonce || !echostr) {
         res.writeHead(400);
         res.end("missing params");
-        return true;
+        return;
       }
 
       if (!verifySignature(ctx.callbackToken, timestamp, nonce, echostr, msg_signature)) {
         ctx.botCtx.log?.warn(`${logTag()} callback signature verification failed (GET)`);
         res.writeHead(403);
         res.end("signature mismatch");
-        return true;
+        return;
       }
 
       const { message } = decrypt(ctx.encodingAESKey, echostr);
       res.writeHead(200, { "Content-Type": "text/plain" });
       res.end(message);
-      return true;
+      return;
     }
 
     if (req.method === "POST") {
@@ -114,14 +114,14 @@ export async function handleWechatKfWebhook(req: IncomingMessage, res: ServerRes
       if (!encryptedMsg || !msg_signature || !timestamp || !nonce) {
         res.writeHead(400);
         res.end("bad request");
-        return true;
+        return;
       }
 
       if (!verifySignature(ctx.callbackToken, timestamp, nonce, encryptedMsg, msg_signature)) {
         ctx.botCtx.log?.warn(`${logTag()} callback signature verification failed (POST)`);
         res.writeHead(403);
         res.end("signature mismatch");
-        return true;
+        return;
       }
 
       const { message } = decrypt(ctx.encodingAESKey, encryptedMsg);
@@ -146,23 +146,23 @@ export async function handleWechatKfWebhook(req: IncomingMessage, res: ServerRes
         ctx.botCtx.log?.error(`${logTag()} webhook event processing error: ${formatError(err)}`);
       });
 
-      return true;
+      return;
     }
 
     res.writeHead(405);
     res.end("method not allowed");
-    return true;
+    return;
   } catch (err) {
     if (err instanceof Error && err.message.includes("body too large")) {
       res.writeHead(413);
       res.end("payload too large");
-      return true;
+      return;
     }
     ctx.botCtx.log?.error(`${logTag()} webhook error: ${formatError(err)}`);
     if (!res.headersSent) {
       res.writeHead(500);
       res.end("internal error");
     }
-    return true;
+    return;
   }
 }
